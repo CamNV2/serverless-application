@@ -9,6 +9,7 @@ plugins:
   - serverless-iam-roles-per-function
   - serverless-plugin-tracing
   - serverless-aws-documentation
+  - serverless-reqvalidator-plugin
 
 provider:
   name: aws
@@ -104,14 +105,12 @@ functions:
             name: Auth
             resultTtlInSeconds: 0
             identitySource: method.request.header.Authorization
+          reqValidatorName: RequestBodyValidator
           documentation:
             summary: Create a new todo
             description: Create a new todo
             requestModels:
               'application/json': CreateTodoRequest
-          request:
-            schemas:
-              application/json: ${file(models/create-todo-model.json)}
     iamRoleStatementsName: ${self:provider.environment.PROJECT_NAME}-create-todo-role-${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -138,14 +137,12 @@ functions:
             name: Auth
             resultTtlInSeconds: 0
             identitySource: method.request.header.Authorization
+          reqValidatorName: RequestBodyValidator
           documentation:
             summary: Update a todo item
             description: Update a todo item
             requestModels:
-              "application/json": UpdateTodoRequest
-          request:
-            schemas:
-              application/json: ${file(models/update-todo-model.json)}       
+              "application/json": UpdateTodoRequest 
     iamRoleStatementsName: ${self:provider.environment.PROJECT_NAME}-update-todo-role-${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -220,6 +217,16 @@ functions:
 
 resources:
   Resources:
+
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
+    
     # Add necessary AWS resources. You will need at least the following AWS resources
     # TODO: Fill the properties
     # Feel free to change the names as you like. 
@@ -232,6 +239,8 @@ resources:
         RestApiId:
           Ref: ApiGatewayRestApi
 
+    
+    
     # TODO: Create a DynamoDB table with local secondary index and a composite key
     TodosTable:
       Type: AWS::DynamoDB::Table
