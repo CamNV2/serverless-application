@@ -3,16 +3,34 @@ import 'source-map-support/register'
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import * as middy from 'middy'
 import { cors, httpErrorHandler } from 'middy/middlewares'
-
-import { deleteTodo } from '../../businessLogic/todos'
+import { createLogger } from '../../utils/logger'
+import { deleteTodo } from '../../helpers/todos'
 import { getUserId } from '../utils'
 
+const logger = createLogger('createTodoHandler')
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const todoId = event.pathParameters.todoId
-    // TODO: Remove a TODO item by id
-    
-    return undefined
+    try {
+      const todoId = event.pathParameters.todoId
+      // TODO: Remove a TODO item by id
+      console.log("Processing Event ", event);
+      const userId = getUserId(event);
+
+      await deleteTodo(userId, todoId)
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({})
+      }
+    } catch (error) {
+      logger.error(`Error updating Todo item: ${error.message}`)
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: 'Could not update Todo item'
+        })
+      }
+    }
   }
 )
 
